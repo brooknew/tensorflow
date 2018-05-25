@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
-import numpy as np 
+import numpy as np
+from matplotlib import pyplot as plt
 
 def trainMain( Step):
     print("start" )
@@ -42,7 +43,56 @@ def testMain() :
     correct_prediction = tf.equal( tf.argmax(y,1) , tf.argmax(y_,1) )
     accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
     print( sess.run( accuracy , feed_dict={x:mnist.test.images , y_:mnist.test.labels} ) )
+
+    #n = input("please enter the digit image No to test\n" )
+    yr = sess.run( y  ,  feed_dict={x:mnist.test.images[10] } )
+    finddigit = tf.argmax( yr ,1  )
+    ind = sess.run( finddigit )
+    ind = ind[0] 
+    print( "digit is : " , ind )#, "prob is : " ,  yr[ ind ] )
+    print( "yr is :" , yr [0] )  
     print( "test end" ) 
 
+def recognizeOne() :
+    print( "recognize start" )
+    mnist = input_data.read_data_sets('data/',one_hot=True )
+    x = tf.placeholder( 'float' , [1, 784] )
+    w = tf.Variable( tf.zeros( [784,10] ) )
+    b = tf.Variable( tf.zeros([10]) )
+    y = tf.nn.softmax( tf.matmul(x,w) + b )
+    init = tf.global_variables_initializer()
+    saver = tf.train.Saver() 
+    sess = tf.Session()
+    sess.run( init )
+    ckpt = tf.train.get_checkpoint_state( 'model/')
+    if ckpt and ckpt.model_checkpoint_path:
+        print(  ckpt.model_checkpoint_path ) 
+        # Restores from checkpoint
+        saver.restore(sess, ckpt.model_checkpoint_path)
+    
+    n = int(input("please enter the digit image No to test\n" ))
+    yr = sess.run( y  , feed_dict={x:mnist.test.images[n:n+1]}  )
+    finddigit = tf.argmax( yr , 1  )
+    ind = sess.run( finddigit )
+    
+    print( "digit is : " , ind[0] )#, "prob is : " ,  yr[ ind ] )
+    print( "yr is : " ,  yr [0] )  
+    y_ = mnist.test.labels[n]
+    ind1  = tf.argmax( y_)
+    ind1r = sess.run( ind1 )
+    print(  y_[ind1r] ) 
+    diff = y_[ind1r] - yr[0][ind[0] ]
+    diff = abs ( diff )
+    if  diff  > 0.1 :
+        print ( "fail" )
+    else :
+        print( "right" )
+
+    mnistimg =  np.array(   mnist.test.images[n] ) 
+    img =  mnistimg.reshape ( 28 ,28 )
+    plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
+    plt.show()
+    
+    print( "test end" ) 
 
                         
