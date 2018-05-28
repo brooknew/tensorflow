@@ -44,15 +44,6 @@ def testMain() :
     accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
     print( sess.run( accuracy , feed_dict={x:mnist.test.images , y_:mnist.test.labels} ) )
 
-    #n = input("please enter the digit image No to test\n" )
-    yr = sess.run( y  ,  feed_dict={x:mnist.test.images[10] } )
-    finddigit = tf.argmax( yr ,1  )
-    ind = sess.run( finddigit )
-    ind = ind[0] 
-    print( "digit is : " , ind )#, "prob is : " ,  yr[ ind ] )
-    print( "yr is :" , yr [0] )  
-    print( "test end" ) 
-
 def recognizeOne() :
     print( "recognize start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
