@@ -1,6 +1,13 @@
 #coding:utf-8
 import tensorflow as tf
 import numpy as np
+
+def  matrixCopy( m , mNew ) :
+    for  r  in   range( len( m ) )  :
+        for c in  range ( len ( m[r] ) ) :
+            mNew[r][c] = m[r][c]
+
+
 def forwardnn(xa, w1 , w2 , ya) :
     i = 0 
     for  x in xa :
@@ -16,21 +23,21 @@ def  squareErrorAvg( y_a , ya ) :
         e1 = (y_[0]- y[0]) * (y_[0]- y[0])
         e  += e1
         yindex = yindex + 1
-    e  /=  (yindex)
+    e  /=  yindex
     return e 
 
 
 def  learn( layer ,  w1, w2 , wnew ,  xa , ya , y_a , learnRate , wDelta  ) :
     forwardnn( xa ,  w1 , w2 , ya )
     e1 = squareErrorAvg( y_a , ya )
-    print ( "----------------------------------e1 :" , e1 )
+    #print ( "----------------------------------e1 :" , e1 )
     if layer == 1 :  #w1
         for  r  in   range( len( w1 ) )  :
             for c in  range ( len ( w1[r] ) ) :
                 v = w1[r][c]
-                forwardnn( xa ,  w1 , w2 , ya )
-                e1 = squareErrorAvg( y_a , ya )
-                print( "e1:" , e1 ) 
+                #forwardnn( xa ,  w1 , w2 , ya )
+                #e1 = squareErrorAvg( y_a , ya )
+                #print( "e1:" , e1 ) 
                 w1[r][c] += wDelta
                 forwardnn( xa ,  w1 , w2 , ya )
                 e2 = squareErrorAvg( y_a , ya )
@@ -69,7 +76,7 @@ def learnMain() :
 
     Y = [    [0.0], [0.0] ,[0.0], [0.0] ]  
        
-    STEPS = 3
+    STEPS = 3000
     w1new = [[0.0,0.0,0.0],[0.0,0.0,0.0]]
     w2new= [[0.0],[0.0],[0.0]]
     for i in range(STEPS):
@@ -80,13 +87,17 @@ def learnMain() :
         y_a = Y_[start:end]
         learn( 1 ,  w1, w2 , w1new ,  xa , ya , y_a , 0.001 ,0.0000001 )
         learn( 2 ,  w1, w2 , w2new ,  xa , ya , y_a , 0.001 ,0.0000001 )
-        print ('w1 learned  by myself @time(s)  ' , i+1 , '  : ' ,  w1new )
-        print ('w2 learned  by myself @time(s)  ' ,  i +1, '  : '  ,  w2new )
-        w1 = w1new[:]
-        w2 = w2new[:]
+        matrixCopy( w1new ,    w1)
+        matrixCopy( w2new ,    w2)
         forwardnn( xa ,  w1 , w2 , ya )
         e = squareErrorAvg( y_a  , ya )
-        print('loss  by myself @time(s)  ' ,  i +1, '  : '   , e) 
+        if  (i +1)% 10000  == 0 :
+            print ('w1 learned  by myself @time(s)  ' , i+1 , '  : ' ,  w1new )
+            print ('w2 learned  by myself @time(s)  ' ,  i +1, '  : '  ,  w2new )
+            print('loss  by myself @time(s)  ' ,  i +1, '  : '   , e) 
+    print( "训练结果(myself)：" )
+    print("w1:", w1 )
+    print("w2:", w2 )
 
 
 ''' main for training using tensorflow '''
@@ -115,17 +126,20 @@ def main() :
         sess.run(init_op)
           
         # 训练模型。
-        STEPS = 3 #3000
+        STEPS = 3000
         for i in range(STEPS):
             start = 0 # (i*BATCH_SIZE) % 4
             end =  start + BATCH_SIZE
             sess.run(train_step, feed_dict={x: X[start:end], y_: Y_[start:end]})
-            if i % 1 == 0:
+            if  (i+1) % 10000 == 0  :
                 total_loss = sess.run(loss_mse, feed_dict={x: X[start:end], y_: Y_[start:end]})                
                 print ("w1 after trained " , i+1 , " time(s)  by tensorflow:\n", sess.run(w1))
                 print ("w2 after trained " , i +1, " time(s)  by tensorflow:\n", sess.run(w2))
                 print("After %d training step(s), loss_mse  is %g" % (i+1, total_loss))
-
+        print( "训练结果(Tensorflow)：" )
+        print("w1:", sess.run(w1) )
+        print("w2:", sess.run(w2) )
+               
 learnMain()        
 main() 
 
