@@ -1,16 +1,15 @@
 #coding:utf-8
 import tensorflow as tf
 import numpy as np
+from traindata import *
+from dataDim import *
 
-BATCH_SIZE = 2
-SAMPLE_SIZE = 6
+BATCH_SIZE = 8
 
 def  matrixCopy( m , mNew ) :
     for  r  in   range( len( m ) )  :
         for c in  range ( len ( m[r] ) ) :
             mNew[r][c] = m[r][c]
-
-
 def forwardnn(xa, w1 , w2 , ya) :
     i = 0 
     for  x in xa :
@@ -29,7 +28,6 @@ def  squareErrorAvg( y_a , ya ) :
     e  /=  yindex
     return e 
 
-
 def  learn( layer ,  w1, w2 , wnew ,  xa , ya , y_a , learnRate , wDelta  ) :
     forwardnn( xa ,  w1 , w2 , ya )
     e1 = squareErrorAvg( y_a , ya )
@@ -47,17 +45,35 @@ def  learn( layer ,  w1, w2 , wnew ,  xa , ya , y_a , learnRate , wDelta  ) :
             w[r][c] =  v
             wnew[r][c]  =  v- learnN
 
+def calAccury(  ya ) : # ya is list to predicted result   
+    ya = np.array( ya )
+    y_a = Y_T
+    y_a = np.array( y_a ) 
+    accury =np.array(ya - y_a)
+    a = ( abs( accury ) < 0.3 )
+    af = a.astype( np.float32 )
+    right = af.sum()
+    per = right/VALIDATE_SIZE 
+    return per 
+
+def directValidateMain(w1 , w2):
+    xa = XT[0:VALIDATE_SIZE]
+    ya =  [[0.0]]* VALIDATE_SIZE
+    forwardnn(xa, w1 , w2 , ya)
+    per  = calAccury(  ya ) 
+    return per 
+
 ''' Main for  Leaned by myself '''
-def learnMain() :
-    X = [
-        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
-    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
+def directLearnMain() :
+#    X = [
+#        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
+#    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
 
     w1= np.array(  [[1.0,1.0,1.0],[2.0,1.0,1.0]] ) 
     w2= np.array( [[2.0],[3.0],[5.0]] ) 
 
-    Y = [    [0.0], [0.0] ,[0.0], [0.0] ,[0.0], [0.0] ]  
-       
+    Y = [    [0.0] ]* SAMPLE_SIZE 
+         
     STEPS = 3000
     w1new = [[0.0,0.0,0.0],[0.0,0.0,0.0]]
     w2new= [[0.0],[0.0],[0.0]]
@@ -80,15 +96,15 @@ def learnMain() :
     print( "训练结果(myself)：" )
     print("w1:", w1 )
     print("w2:", w2 )
+    per  = directValidateMain( w1 , w2 )
+    print("Accury by myslef:" , per ) 
     return w1,w2
 
-
 ''' main for training using tensorflow '''
-def main() :
-    
-    X = [
-        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
-    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
+def  tensorflowMain() :    
+#    X = [
+#       [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
+#    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
 
     #1定义神经网络的输入、参数和输出,定义前向传播过程。
     x = tf.placeholder(tf.float32, shape=(None, 2))
@@ -124,15 +140,18 @@ def main() :
         r_w2 = sess.run(w2)
         print("w1:", r_w1  )
         print("w2:", r_w2 )
+
+        #validate
+        rv = sess.run( y , feed_dict={x:XT } )
+        per = calAccury( rv )
+        print("Tensorflow accury:" , per  )       
+        
         return r_w1 , r_w2 
                
-w11 , w12 = learnMain()        
-w21, w22 = main()
+w11 , w12 = directLearnMain()        
+w21, w22 = tensorflowMain()
 w1diff = w11-w21
 w2diff = w12-w22
-#print ( "w11,w12" , w11, w12 )
-#print ( "w21,w22" , w21, w22 )
-#print("diff" , w1diff , w2diff )
 d1s = np.sum( w1diff )
 d2s = np.sum( w2diff )
 print( "w1 diff sum" , d1s )
