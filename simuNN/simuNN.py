@@ -2,6 +2,9 @@
 import tensorflow as tf
 import numpy as np
 
+BATCH_SIZE = 2
+SAMPLE_SIZE = 6
+
 def  matrixCopy( m , mNew ) :
     for  r  in   range( len( m ) )  :
         for c in  range ( len ( m[r] ) ) :
@@ -30,57 +33,36 @@ def  squareErrorAvg( y_a , ya ) :
 def  learn( layer ,  w1, w2 , wnew ,  xa , ya , y_a , learnRate , wDelta  ) :
     forwardnn( xa ,  w1 , w2 , ya )
     e1 = squareErrorAvg( y_a , ya )
-    #print ( "----------------------------------e1 :" , e1 )
-    if layer == 1 :  #w1
-        for  r  in   range( len( w1 ) )  :
-            for c in  range ( len ( w1[r] ) ) :
-                v = w1[r][c]
-                #forwardnn( xa ,  w1 , w2 , ya )
-                #e1 = squareErrorAvg( y_a , ya )
-                #print( "e1:" , e1 ) 
-                w1[r][c] += wDelta
-                forwardnn( xa ,  w1 , w2 , ya )
-                e2 = squareErrorAvg( y_a , ya )
-                learnN = (e2-e1)/wDelta * learnRate # (e2-e1)/wDelta :loss函數的微分 
-                #print( r, "," ,c , ":" , v - learnN )
-                w1 [r][c] =  v
-                wnew[r][c]  =  v- learnN
-    else : #w2
-        for  r  in   range( len( w2 ) )  :
-            for c in  range ( len ( w2[r] ) ) :
-                v = w2[r][c]
-                forwardnn( xa ,  w1 , w2 , ya )
-                e1 = squareErrorAvg( y_a , ya )
-                w2[r][c] += wDelta
-                forwardnn( xa ,  w1 , w2 , ya )
-                e2 = squareErrorAvg( y_a , ya )
-                learnN = (e2-e1)/wDelta * learnRate # (e2-e1)/wDelta :loss函數的微分 
-                #print( r, "," ,c , ":" , v - learnN )
-                w2 [r][c] =  v
-                wnew[r][c]  =  v- learnN
-''' Main for  Leaned by muself '''
+    if layer == 1 :
+        w = w1
+    else:
+        w = w2 
+    for  r  in   range( len( wnew ) )  :
+        for c in  range ( len ( wnew[r] ) ) :
+            v = w[r][c]
+            w[r][c] += wDelta
+            forwardnn( xa ,  w1 , w2 , ya )
+            e2 = squareErrorAvg( y_a , ya )
+            learnN = (e2-e1)/wDelta * learnRate # (e2-e1)/wDelta :loss函數的微分 
+            w[r][c] =  v
+            wnew[r][c]  =  v- learnN
+
+''' Main for  Leaned by myself '''
 def learnMain() :
-    BATCH_SIZE = 2
     X = [
-        [1.0,2.0] , [2.0,3.0] ] # ,[1.0,4.0],[2.0,5.0] ]
-    Y_ = [[1.0], [0.0]] # ,[0.0], [1.0]] 
+        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
+    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
 
-    w1=  [[1.0,1.0,1.0],[2.0,1.0,1.0]]
-    w2= [[2.0],[3.0],[5.0]]
-    #w1 = [[ 0.71    ,    0.56499994 , 0.27499998] ,
-    #     [ 1.532     ,  0.29799998 , -0.17000008]] 
-    #w2 =  [[1.387] ,
-    #        [2.621] ,
-    #         [4.621]]
+    w1= np.array(  [[1.0,1.0,1.0],[2.0,1.0,1.0]] ) 
+    w2= np.array( [[2.0],[3.0],[5.0]] ) 
 
-
-    Y = [    [0.0], [0.0] ,[0.0], [0.0] ]  
+    Y = [    [0.0], [0.0] ,[0.0], [0.0] ,[0.0], [0.0] ]  
        
     STEPS = 3000
     w1new = [[0.0,0.0,0.0],[0.0,0.0,0.0]]
     w2new= [[0.0],[0.0],[0.0]]
     for i in range(STEPS):
-        start = 0  # (i*BATCH_SIZE) % 4
+        start =  (i*BATCH_SIZE) % SAMPLE_SIZE 
         end =  start + BATCH_SIZE
         xa = X[start:end]
         ya = Y[start:end]
@@ -89,23 +71,24 @@ def learnMain() :
         learn( 2 ,  w1, w2 , w2new ,  xa , ya , y_a , 0.001 ,0.0000001 )
         matrixCopy( w1new ,    w1)
         matrixCopy( w2new ,    w2)
-        forwardnn( xa ,  w1 , w2 , ya )
-        e = squareErrorAvg( y_a  , ya )
         if  (i +1)% 10000  == 0 :
+            forwardnn( xa ,  w1 , w2 , ya )
+            e = squareErrorAvg( y_a  , ya )
             print ('w1 learned  by myself @time(s)  ' , i+1 , '  : ' ,  w1new )
             print ('w2 learned  by myself @time(s)  ' ,  i +1, '  : '  ,  w2new )
             print('loss  by myself @time(s)  ' ,  i +1, '  : '   , e) 
     print( "训练结果(myself)：" )
     print("w1:", w1 )
     print("w2:", w2 )
+    return w1,w2
 
 
 ''' main for training using tensorflow '''
 def main() :
-    BATCH_SIZE = 2
+    
     X = [
-        [1.0,2.0] , [2.0,3.0] ] # ,[1.0,4.0],[2.0,5.0] ]
-    Y_ = [[1.0], [0.0]] # ,[0.0], [1.0]] 
+        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
+    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
 
     #1定义神经网络的输入、参数和输出,定义前向传播过程。
     x = tf.placeholder(tf.float32, shape=(None, 2))
@@ -128,7 +111,7 @@ def main() :
         # 训练模型。
         STEPS = 3000
         for i in range(STEPS):
-            start = 0 # (i*BATCH_SIZE) % 4
+            start = (i*BATCH_SIZE) % SAMPLE_SIZE 
             end =  start + BATCH_SIZE
             sess.run(train_step, feed_dict={x: X[start:end], y_: Y_[start:end]})
             if  (i+1) % 10000 == 0  :
@@ -137,11 +120,23 @@ def main() :
                 print ("w2 after trained " , i +1, " time(s)  by tensorflow:\n", sess.run(w2))
                 print("After %d training step(s), loss_mse  is %g" % (i+1, total_loss))
         print( "训练结果(Tensorflow)：" )
-        print("w1:", sess.run(w1) )
-        print("w2:", sess.run(w2) )
+        r_w1 = sess.run(w1)
+        r_w2 = sess.run(w2)
+        print("w1:", r_w1  )
+        print("w2:", r_w2 )
+        return r_w1 , r_w2 
                
-learnMain()        
-main() 
+w11 , w12 = learnMain()        
+w21, w22 = main()
+w1diff = w11-w21
+w2diff = w12-w22
+#print ( "w11,w12" , w11, w12 )
+#print ( "w21,w22" , w21, w22 )
+#print("diff" , w1diff , w2diff )
+d1s = np.sum( w1diff )
+d2s = np.sum( w2diff )
+print( "w1 diff sum" , d1s )
+print( "w2 diff sum" , d2s )
 
 """
 w1:
