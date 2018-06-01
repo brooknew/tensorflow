@@ -50,17 +50,19 @@ def calAccury(  ya ) : # ya is list to predicted result
     y_a = Y_T
     y_a = np.array( y_a ) 
     accury =np.array(ya - y_a)
-    a = ( abs( accury ) < 0.3 )
+    a = ( abs( accury ) < TRAIN_THRESHOLD )
     af = a.astype( np.float32 )
     right = af.sum()
     per = right/VALIDATE_SIZE 
-    return per 
+    return per , a 
 
 def directValidateMain(w1 , w2):
     xa = XT[0:VALIDATE_SIZE]
     ya =  [[0.0]]* VALIDATE_SIZE
     forwardnn(xa, w1 , w2 , ya)
-    per  = calAccury(  ya ) 
+    per  , a  = calAccury(  ya )
+    for i in range( len( ya ) ):
+        print ( xa[i] , '=>'  , ya[i] , '||', Y_T[i] , a[i]  )          
     return per 
 
 ''' Main for  Leaned by myself '''
