@@ -61,22 +61,20 @@ def directValidateMain(w1 , w2):
     ya =  [[0.0]]* VALIDATE_SIZE
     forwardnn(xa, w1 , w2 , ya)
     per  , a  = calAccury(  ya )
-    for i in range( len( ya ) ):
-        print ( xa[i] , '=>'  , ya[i] , '||', Y_T[i] , a[i]  )          
+    #for i in range( len( ya ) ):
+    #    print ( xa[i] , '=>'  , ya[i] , '||', Y_T[i] , a[i]  )          
     return per 
 
 ''' Main for  Leaned by myself '''
 def directLearnMain() :
-#    X = [
-#        [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
-#    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
-
-    w1= np.array(  [[1.0,1.0,1.0],[2.0,1.0,1.0]] ) 
-    w2= np.array( [[2.0],[3.0],[5.0]] ) 
+    w1= np.array( [[1.0,1.0,1.0],[2.0,1.0,1.0]])
+    w2= np.array([[2.0],[3.0],[5.0]])
+    #w1= np.array(  [[0.1,0.5,0.0],[0.0,0.0,0.0]] ) 
+    #w2= np.array( [[0.05],[0.01],[0.05]] ) 
 
     Y = [    [0.0] ]* SAMPLE_SIZE 
          
-    STEPS = 3000
+    STEPS = 300000
     w1new = [[0.0,0.0,0.0],[0.0,0.0,0.0]]
     w2new= [[0.0],[0.0],[0.0]]
     for i in range(STEPS):
@@ -104,16 +102,14 @@ def directLearnMain() :
 
 ''' main for training using tensorflow '''
 def  tensorflowMain() :    
-#    X = [
-#       [1.0,2.0] , [2.0,3.0]  ,[1.0,4.0],[2.0,5.0] , [1.0,1.0] , [1.5,1.0]  ]
-#    Y_ = [[0.0], [1.0] ,[0.0], [0.0] ,[1.0], [1.0]] 
-
     #1定义神经网络的输入、参数和输出,定义前向传播过程。
     x = tf.placeholder(tf.float32, shape=(None, 2))
     y_= tf.placeholder(tf.float32, shape=(None, 1))
 
     w1= tf.Variable( [[1.0,1.0,1.0],[2.0,1.0,1.0]])
     w2= tf.Variable([[2.0],[3.0],[5.0]])
+    #w1= tf.Variable( [[0.1,0.5,0.0],[0.0,0.0,0.0]])
+    #w2= tf.Variable([[0.05],[0.01],[0.05]])
 
     a = tf.matmul(x, w1)
     y = tf.matmul(a, w2)
@@ -127,7 +123,7 @@ def  tensorflowMain() :
         sess.run(init_op)
           
         # 训练模型。
-        STEPS = 3000
+        STEPS = 300000
         for i in range(STEPS):
             start = (i*BATCH_SIZE) % SAMPLE_SIZE 
             end =  start + BATCH_SIZE
@@ -145,7 +141,7 @@ def  tensorflowMain() :
 
         #validate
         rv = sess.run( y , feed_dict={x:XT } )
-        per = calAccury( rv )
+        per , accAr = calAccury( rv )
         print("Tensorflow accury:" , per  )       
         
         return r_w1 , r_w2 
@@ -154,8 +150,8 @@ w11 , w12 = directLearnMain()
 w21, w22 = tensorflowMain()
 w1diff = w11-w21
 w2diff = w12-w22
-d1s = np.sum( w1diff )
-d2s = np.sum( w2diff )
+d1s = np.sum( abs(w1diff) )
+d2s = np.sum( abs(w2diff) )
 print( "w1 diff sum" , d1s )
 print( "w2 diff sum" , d2s )
 
