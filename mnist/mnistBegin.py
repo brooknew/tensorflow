@@ -2,45 +2,93 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 from matplotlib import pyplot as plt
+from saveTensor import *
 
-def trainMain( Step):
+TRAIN_STEPS = 100000
+LAYER1_NODE = 20 
+REGULARIZER = 0.0001
+LEARN_RATE = 0.1
+
+LAYER=2
+
+
+
+def trainMain( ):
     print("start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
     x = tf.placeholder( 'float' , [None , 784] )
-    w1 = tf.Variable( tf.zeros( [784,50] ) )
-    b1 = tf.Variable( tf.zeros([50]) )
-    y1 = tf.nn.relu( tf.matmul(x,w1) + b1)
-    w2 = tf.Variable( tf.zeros( [50,10] ) )
+    w1 = tf.Variable( tf.zeros( [784, LAYER1_NODE] ) )
+    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
+    y1 =  tf.nn.relu( tf.matmul(x,w1) + b1)
+    w2 = tf.Variable( tf.zeros( [LAYER1_NODE,10] ) )
     b2 = tf.Variable( tf.zeros([10]) )
     w3 = tf.Variable( tf.zeros( [784,10] ) )
-    y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
+    y2 = tf.matmul(x,w3)
+    #tf.add_to_collection('losses', tf.contrib.layers.l2_regularizer(REGULARIZER)(w3))
+    if LAYER == 2 :
+        y = tf.nn.softmax(  tf.matmul(y1,w2) + b2 )
+    else :
+        y = tf.nn.softmax( y2 + b2 )
     y_=tf.placeholder('float',[None,10] )
-    cross_entropy = -tf.reduce_sum( y_*tf.log(y) )
-    train_step = tf.train.GradientDescentOptimizer(0.01).minimize( cross_entropy )
+    cross_entropy = -tf.reduce_sum( y_*tf.log(y) ) # + tf.add_n(tf.get_collection('losses') )
+    train_step = tf.train.GradientDescentOptimizer(LEARN_RATE).minimize( cross_entropy )
     init = tf.global_variables_initializer()
     sess = tf.Session()
     sess.run( init )
     saver = tf.train.Saver() 
-    for i in range(Step):
-        if  i%500 == 0 :
-            print( i , ":" , '=' ) 
-       
+    for i in range(TRAIN_STEPS):
         batch_xs , batch_ys = mnist.train.next_batch( 100 )
         sess.run( train_step , feed_dict={x:batch_xs , y_:batch_ys} )
+        if  i%1000 == 0 :
+            sampNum = 20000 
+            batch_xs , batch_ys = mnist.train.next_batch( sampNum )
+            cross_entropyR = sess.run( cross_entropy  ,  feed_dict={x:batch_xs , y_:batch_ys} )
+            cross_entropyR /= ( sampNum/100 ) 
+            print( i  , " loss=" , cross_entropyR )
+            rw1 = sess.run( w1 )
+            rb1 = sess.run( b1 )
+            rw2 = sess.run( w2 )
+            rb2 = sess.run( b2 )
+            rw3 = sess.run( w3 )
+            #print('w1:' ,rw1 )
+            #print ('b1:', rb1 )
+            #print( 'w2:',rw2 )
+            #print( 'b2:',rb2 )
+            #print( 'w3:' , rw3 )
     saver.save( sess , 'model/checkpt' ) 
+    rb2 = sess.run( b2 )
+    rw3 = sess.run( w3 )
+    print( 'b2:',rb2 )
+    print( 'w3:' , rw3 )
     print( "train end" )
+    if LAYER == 1 :
+        saveMatrix( rw3 ,'w3',   'w_b.txt' , 'wt' )
+        saveMatrix( rb2 , 'b2' , 'w_b.txt' , 'at' )
+    elif LAYER == 2 :
+        rw1 = sess.run( w1 )
+        rb1 = sess.run( b1 )
+        rw2 = sess.run( w2 )
+        rb2 = sess.run( b2 )
+        saveMatrix( rw1 ,'w1',   'w_b_layer2.txt' , 'wt' )
+        saveMatrix( rb1 , 'b1' , 'w_b_layer2.txt' , 'at' )
+        saveMatrix( rw2 ,'w2',   'w_b_layer2.txt' , 'at' )
+        saveMatrix( rb2 , 'b2' , 'w_b_layer2.txt' , 'at' )
+
 
 def testMain() :
     print( "test start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
     x = tf.placeholder( 'float' , [None , 784] )
-    w1 = tf.Variable( tf.zeros( [784,50] ) )
-    b1 = tf.Variable( tf.zeros([50]) )
+    w1 = tf.Variable( tf.zeros( [784,LAYER1_NODE] ) )
+    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
     y1 = tf.nn.relu( tf.matmul(x,w1) + b1)
-    w2 = tf.Variable( tf.zeros( [50,10] ) )
+    w2 = tf.Variable( tf.zeros( [LAYER1_NODE,10] ) )
     b2 = tf.Variable( tf.zeros([10]) )
     w3 = tf.Variable( tf.zeros( [784,10] ) )
-    y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
+    if LAYER == 2 :
+        y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
+    else :
+        y = tf.nn.softmax( tf.matmul(x,w3) + b2 )
     y_=tf.placeholder('float',[None,10] )
     init = tf.global_variables_initializer()
     saver = tf.train.Saver() 
@@ -59,13 +107,13 @@ def recognizeOne() :
     print( "recognize start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
     x = tf.placeholder( 'float' , [None , 784] )
-    w1 = tf.Variable( tf.zeros( [784,50] ) )
-    b1 = tf.Variable( tf.zeros([50]) )
+    w1 = tf.Variable( tf.zeros( [784,LAYER1_NODE] ) )
+    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
     y1 = tf.nn.relu( tf.matmul(x,w1) + b1)
-    w2 = tf.Variable( tf.zeros( [50,10] ) )
+    w2 = tf.Variable( tf.zeros( [LAYER1_NODE,10] ) )
     b2 = tf.Variable( tf.zeros([10]) )
     w3 = tf.Variable( tf.zeros( [784,10] ) )
-    y = tf.nn.softmax( tf.matmul(x,w3) + b2 )
+    y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
     init = tf.global_variables_initializer()
     saver = tf.train.Saver() 
     sess = tf.Session()
