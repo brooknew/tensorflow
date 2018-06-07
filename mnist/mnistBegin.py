@@ -5,12 +5,14 @@ from matplotlib import pyplot as plt
 from saveTensor import *
 
 TRAIN_STEPS = 100000
-LAYER1_NODE = 20 
+LAYER1_NODE = 500 
 REGULARIZER = 0.0001
 LEARN_RATE = 0.1
+LEARNRATE_START =  0.1
+DECAPY_STEPS  = 200 #50000/100
+DECAY_RATE = 0.99
 
 LAYER=2
-
 
 
 def trainMain( ):
@@ -31,7 +33,9 @@ def trainMain( ):
         y = tf.nn.softmax( y2 + b2 )
     y_=tf.placeholder('float',[None,10] )
     cross_entropy = -tf.reduce_sum( y_*tf.log(y) ) # + tf.add_n(tf.get_collection('losses') )
-    train_step = tf.train.GradientDescentOptimizer(LEARN_RATE).minimize( cross_entropy )
+    global_stepL = tf.Variable( 0 , trainable = False  )
+    learnRate = tf.train.exponential_decay( LEARNRATE_START , global_stepL , DECAPY_STEPS , DECAY_RATE, staircase = True) 
+    train_step = tf.train.GradientDescentOptimizer(learnRate).minimize( cross_entropy , global_step = global_stepL )
     init = tf.global_variables_initializer()
     sess = tf.Session()
     sess.run( init )
@@ -43,25 +47,15 @@ def trainMain( ):
             sampNum = 20000 
             batch_xs , batch_ys = mnist.train.next_batch( sampNum )
             cross_entropyR = sess.run( cross_entropy  ,  feed_dict={x:batch_xs , y_:batch_ys} )
-            cross_entropyR /= ( sampNum/100 ) 
-            print( i  , " loss=" , cross_entropyR )
-            rw1 = sess.run( w1 )
-            rb1 = sess.run( b1 )
-            rw2 = sess.run( w2 )
-            rb2 = sess.run( b2 )
-            rw3 = sess.run( w3 )
-            #print('w1:' ,rw1 )
-            #print ('b1:', rb1 )
-            #print( 'w2:',rw2 )
-            #print( 'b2:',rb2 )
-            #print( 'w3:' , rw3 )
-    saver.save( sess , 'model/checkpt' ) 
-    rb2 = sess.run( b2 )
-    rw3 = sess.run( w3 )
-    print( 'b2:',rb2 )
-    print( 'w3:' , rw3 )
-    print( "train end" )
+            cross_entropyR /= ( sampNum/100 )
+            lr = sess.run( learnRate )
+            gsv = sess.run( global_stepL ) 
+            print( i  , " loss=" , cross_entropyR , 'global_step:' , gsv , 'learn rate:' , lr  )
+
+    saver.save( sess , 'model/checkpt' )    
     if LAYER == 1 :
+        rb2 = sess.run( b2 )
+        rw3 = sess.run( w3 )        
         saveMatrix( rw3 ,'w3',   'w_b.txt' , 'wt' )
         saveMatrix( rb2 , 'b2' , 'w_b.txt' , 'at' )
     elif LAYER == 2 :
@@ -73,6 +67,14 @@ def trainMain( ):
         saveMatrix( rb1 , 'b1' , 'w_b_layer2.txt' , 'at' )
         saveMatrix( rw2 ,'w2',   'w_b_layer2.txt' , 'at' )
         saveMatrix( rb2 , 'b2' , 'w_b_layer2.txt' , 'at' )
+    print( "train end" )
+    
+def main():
+    tf.logging.set_verbosity(tf.logging.ERROR)
+    trainMain()
+
+if __name__ == '__main__':
+    main( )
 
 
 def testMain() :
