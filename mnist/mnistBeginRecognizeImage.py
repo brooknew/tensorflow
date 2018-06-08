@@ -22,19 +22,16 @@ def pre_pic(picName):
         nm_arr[0][i] = pixv
     return nm_arr
 
+def showImgj( im ) :
+        mnistimg =  np.array(  im  ) 
+        img =  mnistimg.reshape ( 28 ,28 )
+        plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
+        plt.show()
+
 def  recognizeImageMain():
     print( "recognizeImage start" )
     x = tf.placeholder( 'float' , [None , 784] )
-    w1 = tf.Variable( tf.zeros( [784, LAYER1_NODE] ) )
-    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
-    y1 = tf.nn.relu( tf.matmul(x,w1) + b1)
-    w2 = tf.Variable( tf.zeros( [LAYER1_NODE,10] ) )
-    b2 = tf.Variable( tf.zeros([10]) )
-    w3 = tf.Variable( tf.zeros( [784,10] ) )
-    if LAYER == 2 :
-        y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
-    else:
-        y = tf.nn.softmax( tf.matmul(x,w3) + b2 )
+    y = forward( x ) 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver() 
     sess = tf.Session()
@@ -53,10 +50,7 @@ def  recognizeImageMain():
         print( "digit is : " , ind[0] )
         print( "yr:" , yr[0][ind[0]] )
         print ( yr ) 
-        #mnistimg =  np.array(  testPicArr[0] ) 
-        #img =  mnistimg.reshape ( 28 ,28 )
-        #plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
-        #plt.show()
+        #showImgj(  testPicArr[0] ) 
 
 
 recognizeImageMain()

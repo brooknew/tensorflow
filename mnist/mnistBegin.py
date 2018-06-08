@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from saveTensor import *
 
-TRAIN_STEPS = 50000
+TRAIN_STEPS = 100000
 LAYER1_NODE = 500 
 REGULARIZER = 0.0001
 LEARN_RATE = 0.1
@@ -14,24 +14,64 @@ DECAY_RATE = 0.99
 
 LAYER=2
 
+def forward( x ):
+    if LAYER == 2 :
+        w1 = tf.Variable( tf.truncated_normal( [784, LAYER1_NODE] ,stddev=0.1)  , name='w1' ) #tf.zeros( [784, LAYER1_NODE] ) )
+        b1 = tf.Variable( tf.zeros([LAYER1_NODE]) , name='b1' )
+        y1 =  tf.nn.relu( tf.matmul(x,w1) + b1)
+        w2 = tf.Variable( tf.truncated_normal(  [LAYER1_NODE,10]  ,stddev=0.1)  , name = 'w2' )   # tf.zeros( [LAYER1_NODE,10] ) )
+        b2 = tf.Variable( tf.zeros([10]) , name = 'b2' )         
+        y = tf.nn.softmax(  tf.matmul(y1,w2) + b2 )
+    else :
+        b2 = tf.Variable( tf.zeros([10]) , name = 'b2' )
+        w3 = tf.Variable( tf.zeros( [784,10] )  , name = 'w3')
+        y2 = tf.matmul(x,w3)        
+        y = tf.nn.softmax( y2 + b2 )
+    return y 
+
+def saveVar( sess ): 
+    if LAYER == 1 :
+        for var in tf.global_variables() :
+            if( var.name =='b2:0' ):                 
+                rb2 = sess.run( var )
+                saveMatrix( rb2 , 'b2' , 'w_b.txt' , 'at' )
+            elif ( var.name == 'w3:0') :
+                rw3 = sess.run( w3 )        
+                saveMatrix( rw3 ,'w3',   'w_b.txt' , 'wt' )        
+    elif LAYER == 2 :
+        for var in tf.global_variables() :
+            if( var.name =='w1:0' ):  
+                rw1 = sess.run( var )
+                saveMatrix( rw1 ,'w1',   'w_b_layer2.txt' , 'wt' )
+            elif var.name =='b1:0' :
+                rb1 = sess.run( var )
+                saveMatrix( rb1 , 'b1' , 'w_b_layer2.txt' , 'at' )
+            elif var.name == 'w2:0' :
+                rw2 = sess.run( var )
+                saveMatrix( rw2 ,'w2',   'w_b_layer2.txt' , 'at' )
+            elif var.name == 'b2:0':
+                rb2 = sess.run( var )
+                saveMatrix( rb2 , 'b2' , 'w_b_layer2.txt' , 'at' )
+        rw1abs = abs( rw1 )
+        rb1abs = abs( rb1 )
+        rw2abs= abs( rw2 )
+        rb2abs = abs( rb2 )
+        w1sum = tf.reduce_sum( rw1abs )
+        b1sum = tf.reduce_sum( rb1abs )
+        w2sum = tf.reduce_sum( rw2abs )
+        b2sum = tf.reduce_sum( rb2abs )
+        print( 'w1sum:' , sess.run(w1sum) )
+        print( 'b1sum:' , sess.run(b1sum ))
+        print( 'w2sum:' , sess.run(w2sum ))
+        print( 'b2sum:' , sess.run(b2sum ) )
+
+
 
 def trainMain( ):
     print("start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
     x = tf.placeholder( 'float' , [None , 784] )
-    w1 = tf.Variable( tf.truncated_normal( [784, LAYER1_NODE] ,stddev=0.1)  ) #tf.zeros( [784, LAYER1_NODE] ) )
-    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
-    y1 =  tf.nn.relu( tf.matmul(x,w1) + b1)
-    w2 = tf.Variable( tf.truncated_normal(  [LAYER1_NODE,10]  ,stddev=0.1)  )   # tf.zeros( [LAYER1_NODE,10] ) )
-    b2 = tf.Variable( tf.zeros([10]) )
-    w3 = tf.Variable( tf.zeros( [784,10] ) )
-    y2 = tf.matmul(x,w3)
-    #tf.add_to_collection('losses', tf.contrib.layers.l2_regularizer(REGULARIZER)(w3))
-    if LAYER == 2 :
-        y = tf.nn.softmax(  tf.matmul(y1,w2) + b2 )
-        #y = tf.matmul(y1,w2) + b2 
-    else :
-        y = tf.nn.softmax( y2 + b2 )
+    y = forward( x )
     y_=tf.placeholder('float',[None,10] )
     cross_entropy = -tf.reduce_mean( y_*tf.log(y) ) # + tf.add_n(tf.get_collection('losses') )
     #cross_ent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
@@ -48,42 +88,18 @@ def trainMain( ):
     for i in range(TRAIN_STEPS):
         batch_xs , batch_ys = mnist.train.next_batch( 100 )
         _,  cross_entropyR =  sess.run( [ train_step , cross_entropy],  feed_dict={x:batch_xs , y_:batch_ys} )
-        if  i%1000 == 0 :
-            #sampNum = 20000 
-            #batch_xs , batch_ys = mnist.train.next_batch( sampNum )
-            #cross_entropyR = sess.run( cross_entropy  ,  feed_dict={x:batch_xs , y_:batch_ys} )
-            #cross_entropyR /= ( sampNum/100 )
+        if  i%10000 == 0 :
             lr = sess.run( learnRate )
             gsv = sess.run( global_stepL ) 
             print( i  , " loss=" , cross_entropyR , 'global_step:' , gsv , 'learn rate:' , lr  )
 
-    saver.save( sess , 'model/checkpt' )    
-    if LAYER == 1 :
-        rb2 = sess.run( b2 )
-        rw3 = sess.run( w3 )        
-        saveMatrix( rw3 ,'w3',   'w_b.txt' , 'wt' )
-        saveMatrix( rb2 , 'b2' , 'w_b.txt' , 'at' )
-    elif LAYER == 2 :
-        rw1 = sess.run( w1 )
-        rb1 = sess.run( b1 )
-        rw2 = sess.run( w2 )
-        rb2 = sess.run( b2 )
-        saveMatrix( rw1 ,'w1',   'w_b_layer2.txt' , 'wt' )
-        saveMatrix( rb1 , 'b1' , 'w_b_layer2.txt' , 'at' )
-        saveMatrix( rw2 ,'w2',   'w_b_layer2.txt' , 'at' )
-        saveMatrix( rb2 , 'b2' , 'w_b_layer2.txt' , 'at' )
-        rw1abs = abs( rw1 )
-        rb1abs = abs( rb1 )
-        rw2abs= abs( rw2 )
-        rb2abs = abs( rb2 )
-        w1sum = tf.reduce_sum( rw1abs )
-        b1sum = tf.reduce_sum( rb1abs )
-        w2sum = tf.reduce_sum( rw2abs )
-        b2sum = tf.reduce_sum( rb2abs )
-        print( 'w1sum:' , sess.run(w1sum) )
-        print( 'b1sum:' , sess.run(b1sum ))
-        print( 'w2sum:' , sess.run(w2sum ))
-        print( 'b2sum:' , sess.run(b2sum ) )
+    saver.save( sess , 'model/checkpt' )
+    
+    correct_prediction = tf.equal( tf.argmax(y,1) , tf.argmax(y_,1) )
+    accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
+    print( "Accuracy Rate:" , sess.run( accuracy , feed_dict={x:mnist.validation.images[1:600] , y_:mnist.validation.labels[1:600]} ) )
+    
+    saveVar( sess ) 
     print( "train end" )
     
 
@@ -91,28 +107,12 @@ def testMain() :
     print( "test start" )
     mnist = input_data.read_data_sets('data/',one_hot=True )
     x = tf.placeholder( 'float' , [None , 784] )
-    #w1 = tf.Variable( tf.zeros( [784,LAYER1_NODE] ) )
-    w1 = tf.Variable( tf.truncated_normal( [784, LAYER1_NODE] ,stddev=0.1)  ) 
-    b1 = tf.Variable( tf.zeros([LAYER1_NODE]) )
-    y1 = tf.nn.relu( tf.matmul(x,w1) + b1)
-    #w2 = tf.Variable( tf.zeros( [LAYER1_NODE,10] ) )
-    w2 = tf.Variable( tf.truncated_normal(  [LAYER1_NODE,10]  ,stddev=0.1)  )
-    b2 = tf.Variable( tf.zeros([10]) )
-    w3 = tf.Variable( tf.zeros( [784,10] ) )
-    y2 = tf.matmul(x,w3)
-    global_stepL = tf.Variable( 0 , trainable = False  )
-    if LAYER == 2 :
-        y = tf.nn.softmax( tf.matmul(y1,w2) + b2 )
-    else :
-        y = tf.nn.softmax( y2 + b2 ) #tf.matmul(x,w3) + b2 )
+    y = forward( x )
     y_=tf.placeholder('float',[None,10] )
-   
     saver = tf.train.Saver() 
     sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run( init )
-    for var in tf.global_variables():
-        print(var.name)
 
     ckpt = tf.train.get_checkpoint_state( 'model/')
     if ckpt and ckpt.model_checkpoint_path:
@@ -121,7 +121,7 @@ def testMain() :
         saver.restore(sess, ckpt.model_checkpoint_path)
     correct_prediction = tf.equal( tf.argmax(y,1) , tf.argmax(y_,1) )
     accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
-    print( sess.run( accuracy , feed_dict={x:mnist.train.images[500:600] , y_:mnist.train.labels[500:600]} ) )
+    print( "Accuracy Rate:" ,sess.run( accuracy , feed_dict={x:mnist.validation.images[1:1000] , y_:mnist.validation.labels[1:1000]} ) )
 
 def main():
     tf.logging.set_verbosity(tf.logging.ERROR)
