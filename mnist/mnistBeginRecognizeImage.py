@@ -53,10 +53,10 @@ def  recognizeImageMain():
         print( "digit is : " , ind[0] )
         print( "yr:" , yr[0][ind[0]] )
         print ( yr ) 
-        mnistimg =  np.array(  testPicArr[0] ) 
-        img =  mnistimg.reshape ( 28 ,28 )
-        plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
-        plt.show()
+        #mnistimg =  np.array(  testPicArr[0] ) 
+        #img =  mnistimg.reshape ( 28 ,28 )
+        #plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
+        #plt.show()
 
 
 recognizeImageMain()
