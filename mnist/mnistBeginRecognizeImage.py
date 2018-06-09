@@ -2,6 +2,9 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+from mnistBegin import *
+
+THRESH = 50
 
 def pre_pic(picName):
     img = Image.open( picName)
@@ -11,20 +14,24 @@ def pre_pic(picName):
     nm_arr_0 = arr.reshape([784] )
     nm_arr = np.empty( (1,784) ,  dtype =  np.float32  ) 
     for i  in range( 784 ) :
-        pix = (255.0 - nm_arr_0[i])/255.0
-        if pix < 40.0/256:
-            pix = 0.0
+        pix = (255  - nm_arr_0[i])
+        if pix < THRESH:
+            pixv = 0.0
         else:
-            pix = 1.0
-        nm_arr[0][i] = pix
+            pixv = 1.0
+        nm_arr[0][i] = pixv
     return nm_arr
+
+def showImgj( im ) :
+        mnistimg =  np.array(  im  ) 
+        img =  mnistimg.reshape ( 28 ,28 )
+        plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
+        plt.show()
 
 def  recognizeImageMain():
     print( "recognizeImage start" )
-    x = tf.placeholder( 'float' , [1, 784] )
-    w = tf.Variable( tf.zeros( [784,10] ) )
-    b = tf.Variable( tf.zeros([10]) )
-    y = tf.nn.softmax( tf.matmul(x,w) + b )
+    x = tf.placeholder( 'float' , [None , 784] )
+    y = forward( x ) 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver() 
     sess = tf.Session()
@@ -41,11 +48,9 @@ def  recognizeImageMain():
         finddigit = tf.argmax( yr , 1  )
         ind = sess.run( finddigit )
         print( "digit is : " , ind[0] )
-        print( "yr:" , yr[0][ind[0]] ) 
-        mnistimg =  np.array(  testPicArr[0] ) 
-        img =  mnistimg.reshape ( 28 ,28 )
-        plt.imshow(  img ,  cmap = 'gray', interpolation = 'bicubic' )
-        plt.show()
+        print( "yr:" , yr[0][ind[0]] )
+        print ( yr ) 
+        #showImgj(  testPicArr[0] ) 
 
 
 recognizeImageMain()
