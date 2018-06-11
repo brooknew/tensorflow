@@ -1,5 +1,14 @@
 import tensorflow as tf
 
+def argmax1( ):
+    a = [1,5,0]
+    argC =[  tf.argmax( a , 0 ) , tf.argmax( a , 0 ) ]
+      
+    with tf.Session() as se :
+        r = se.run(argC )
+        print( r[0] )
+        print ( r[1] )
+
 def findMaxFromRank3() :
     """
     找出一个三阶张量第三维(索引是2）的最大值
@@ -36,3 +45,4 @@ def findMaxFromRank1() :
 
 findMaxFromRank3()
 findMaxFromRank1() 
+argmax1( )
