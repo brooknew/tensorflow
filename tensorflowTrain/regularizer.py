@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 def main() :
-    a =tf.constant(  [ 1., 2., 3.] ) 
+    a =tf.constant(  [ 1., 2., 3. , 100] ) 
     regf = tf.contrib.layers.l2_regularizer(3.)
     print( type ( regf ) ) 
     reg = regf( a )
