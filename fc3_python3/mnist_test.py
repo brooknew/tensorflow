@@ -14,6 +14,7 @@ def test(mnist):
 
         ema = tf.train.ExponentialMovingAverage(mnist_backward.MOVING_AVERAGE_DECAY)
         ema_restore = ema.variables_to_restore()
+        print (  ema_restore ) 
         saver = tf.train.Saver(ema_restore)
 		
         correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))

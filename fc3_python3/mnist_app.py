@@ -21,7 +21,10 @@ def restore_model(testPicArr):
                         if ckpt and ckpt.model_checkpoint_path:
                                 saver.restore(sess, ckpt.model_checkpoint_path)
 
-                                preValue = sess.run(preValue, feed_dict={x:testPicArr})
+                                preValue  = sess.run( preValue  , feed_dict={x:testPicArr})
+                                yr = sess.run( y , feed_dict={x:testPicArr} )
+                                print ( yr )
+                                print ( yr[0][preValue[0]] )  
                                 return preValue
                         else:
                                 print("No checkpoint file found")
