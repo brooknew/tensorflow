@@ -4,9 +4,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 from saveTensor import *
 
-TRAIN_STEPS = 100000
+#([784,500]) + b1[500] -> ([500,10])+b2[10]  ,  Accuracy Rate is as the following
+# 1 no     regularizer : 0.9603
+# 2 have  regularizer : 0.9593
+
+TRAIN_STEPS = 100000 
 LAYER1_NODE = 500 
 REGULARIZER = 0.0001
+REGUL_COLLECTION='loss'
 LEARN_RATE = 0.1
 LEARNRATE_START =  0.1
 DECAPY_STEPS  = 200 #50000/100
@@ -17,14 +22,17 @@ LAYER=2
 def forward( x ):
     if LAYER == 2 :
         w1 = tf.Variable( tf.truncated_normal( [784, LAYER1_NODE] ,stddev=0.1)  , name='w1' ) #tf.zeros( [784, LAYER1_NODE] ) )
+        tf.add_to_collection( REGUL_COLLECTION ,  tf.contrib.layers.l2_regularizer(REGULARIZER)(w1) ) 
         b1 = tf.Variable( tf.zeros([LAYER1_NODE]) , name='b1' )
         y1 =  tf.nn.relu( tf.matmul(x,w1) + b1)
         w2 = tf.Variable( tf.truncated_normal(  [LAYER1_NODE,10]  ,stddev=0.1)  , name = 'w2' )   # tf.zeros( [LAYER1_NODE,10] ) )
+        tf.add_to_collection( REGUL_COLLECTION ,  tf.contrib.layers.l2_regularizer(REGULARIZER)(w2) )
         b2 = tf.Variable( tf.zeros([10]) , name = 'b2' )         
         y = tf.nn.softmax(  tf.matmul(y1,w2) + b2 )
     else :
         b2 = tf.Variable( tf.zeros([10]) , name = 'b2' )
         w3 = tf.Variable( tf.zeros( [784,10] )  , name = 'w3')
+        tf.add_to_collection( REGUL_COLLECTION ,  tf.contrib.layers.l2_regularizer(REGULARIZER)(w3) )
         y2 = tf.matmul(x,w3)        
         y = tf.nn.softmax( y2 + b2 )
     return y 
@@ -73,7 +81,9 @@ def trainMain( ):
     x = tf.placeholder( 'float' , [None , 784] )
     y = forward( x )
     y_=tf.placeholder('float',[None,10] )
-    cross_entropy = -tf.reduce_mean( y_*tf.log(y) ) # + tf.add_n(tf.get_collection('losses') )
+    cross_entropy = -tf.reduce_mean( y_*tf.log(y) ) #
+    if( LAYER == 2 ) :
+        cross_entropy +=   tf.add_n(tf.get_collection(REGUL_COLLECTION) )
     #cross_ent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=tf.argmax(y_, 1))
     #cross_entropy = tf.reduce_mean( cross_ent )  
     global_stepL = tf.Variable( 0 , trainable = False  )
@@ -97,7 +107,7 @@ def trainMain( ):
     
     correct_prediction = tf.equal( tf.argmax(y,1) , tf.argmax(y_,1) )
     accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
-    print( "Accuracy Rate:" , sess.run( accuracy , feed_dict={x:mnist.validation.images[1:600] , y_:mnist.validation.labels[1:600]} ) )
+    print( "Accuracy Rate:" , sess.run( accuracy , feed_dict={x:mnist.test.images[0:10000] , y_:mnist.test.labels[0:10000]} ) )
     
     saveVar( sess ) 
     print( "train end" )
@@ -121,7 +131,7 @@ def testMain() :
         saver.restore(sess, ckpt.model_checkpoint_path)
     correct_prediction = tf.equal( tf.argmax(y,1) , tf.argmax(y_,1) )
     accuracy = tf.reduce_mean( tf.cast( correct_prediction , 'float')  )
-    print( "Accuracy Rate:" ,sess.run( accuracy , feed_dict={x:mnist.validation.images[1:1000] , y_:mnist.validation.labels[1:1000]} ) )
+    print( "Accuracy Rate:" ,sess.run( accuracy , feed_dict={x:mnist.test.images[0:10000] , y_:mnist.test.labels[0:10000]} ) )
 
 def main():
     tf.logging.set_verbosity(tf.logging.ERROR)
